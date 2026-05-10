@@ -1,0 +1,3 @@
+streamlit
+pandas
+4.  **En Streamlit Cloud:** Si ya tienes la app creada, se actualizará sola en unos segundos tras hacer el "Commit" en GitHub. Si no, crea una nueva apuntando a este archivo `app.py`.
