@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import os
 
 # Configuración de la interfaz estilo Omnitrix
 st.set_page_config(
@@ -10,7 +11,6 @@ st.set_page_config(
 )
 
 # --- SISTEMA DE ESTILOS (CSS) ---
-# Se inyecta el CSS global para la aplicación
 st.markdown("""
     <style>
     .stApp {
@@ -73,6 +73,15 @@ st.markdown("""
     .bar-fill {
         height: 100%;
         border-radius: 7px;
+        position: relative;
+    }
+
+    /* Efecto de brillo animado en las barras */
+    .bar-fill::after {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
     }
 
     .f-power { background: linear-gradient(90deg, #ffaa00, #ffff00); box-shadow: 0 0 10px #ffff00; }
@@ -88,74 +97,82 @@ st.markdown("""
 st.markdown('<h1 class="main-title">OMNITRIX</h1>', unsafe_allow_html=True)
 st.markdown('<p style="text-align:center; color:#00ff00; font-size:12px; letter-spacing:8px; opacity:0.8; margin-bottom:30px;">ACCESO A BASE DE DATOS: GALVAN PRIME</p>', unsafe_allow_html=True)
 
-uploaded_file = st.file_uploader("", type=["csv"])
+# --- CARGA AUTOMÁTICA ---
+# El nombre del archivo que debe estar en tu GitHub
+file_name = 'ben10_aliens_dataset.csv'
 
-if uploaded_file is not None:
-    try:
-        df = pd.read_csv(uploaded_file)
+@st.cache_data
+def load_data_auto():
+    if os.path.exists(file_name):
+        df = pd.read_csv(file_name)
         df.columns = df.columns.str.strip().str.lower()
+        return df
+    return None
 
-        search = st.text_input("🧬 ESCANEAR ADN (Nombre del Alien):", placeholder="Ejemplo: Heatblast, XLR8...")
+df = load_data_auto()
 
-        if search:
-            results = df[df['name'].str.contains(search, case=False, na=False)]
-        else:
-            results = df.head(4)
+if df is not None:
+    search = st.text_input("🧬 ESCANEAR ADN (Nombre del Alien):", placeholder="Ejemplo: Heatblast, XLR8...")
 
-        if not results.empty:
-            cols = st.columns(2)
-            for idx, (_, row) in enumerate(results.iterrows()):
-                
-                def val(c):
-                    try: return int(float(row.get(c, 0)))
-                    except: return 0
+    if search:
+        results = df[df['name'].str.contains(search, case=False, na=False)]
+    else:
+        # Mostramos los primeros 4 por defecto
+        results = df.head(4)
 
-                name = str(row.get('name', 'N/A')).upper()
-                series = str(row.get('series', 'N/A'))
-                home = str(row.get('home_world', 'Desconocido'))
-                powers = str(row.get('power', 'Habilidades no registradas'))
+    if not results.empty:
+        cols = st.columns(2)
+        for idx, (_, row) in enumerate(results.iterrows()):
+            
+            def val(c):
+                try: return int(float(row.get(c, 0)))
+                except: return 0
 
-                p_tot = val('total_power')
-                p_com = val('combat')
-                p_spe = val('speed')
-                p_int = val('intelligence')
-                p_dur = val('durability')
+            name = str(row.get('name', 'N/A')).upper()
+            series = str(row.get('series', 'N/A'))
+            home = str(row.get('home_world', 'Desconocido'))
+            powers = str(row.get('power', 'Habilidades no registradas'))
 
-                # Construcción manual del HTML para máxima compatibilidad
-                card_html = '<div class="card">'
-                card_html += '<div style="display: flex; justify-content: space-between; align-items: center;">'
-                card_html += '<h2 class="glow-text">' + name + '</h2>'
-                card_html += '<span style="background:#00ff00; color:black; font-size:10px; padding:2px 8px; border-radius:10px; font-weight:bold;">' + series + '</span>'
+            p_tot = val('total_power')
+            p_com = val('combat')
+            p_spe = val('speed')
+            p_int = val('intelligence')
+            p_dur = val('durability')
+
+            # Construcción manual del HTML (el método que te funcionó)
+            card_html = '<div class="card">'
+            card_html += '<div style="display: flex; justify-content: space-between; align-items: center;">'
+            card_html += '<h2 class="glow-text">' + name + '</h2>'
+            card_html += '<span style="background:#00ff00; color:black; font-size:10px; padding:2px 8px; border-radius:10px; font-weight:bold;">' + series + '</span>'
+            card_html += '</div>'
+            card_html += '<p style="color:#666; font-size:11px; margin: 0;">PLANETA: <span style="color:#aaa;">' + home + '</span></p>'
+            card_html += '<div style="background: rgba(0,255,0,0.05); padding: 10px; border-radius: 8px; margin: 15px 0; border: 1px solid rgba(0,255,0,0.1);">'
+            card_html += '<span style="color:#00ff00; font-size:10px; font-weight:bold; display:block; margin-bottom:5px;">HABILIDADES:</span>'
+            card_html += '<span style="color:#ccc; font-size:12px; font-style:italic;">' + powers + '</span>'
+            card_html += '</div>'
+            
+            # Barras de Poder
+            stats_list = [
+                ("PODER TOTAL", p_tot, "f-power"),
+                ("COMBATE", p_com, "f-combat"),
+                ("VELOCIDAD", p_spe, "f-speed"),
+                ("INTELIGENCIA", p_int, "f-intel"),
+                ("DURABILIDAD", p_dur, "f-durability")
+            ]
+            
+            for label, v, color_class in stats_list:
+                width = str(min(v, 100))
+                card_html += '<div class="stat-container">'
+                card_html += '<div class="stat-label"><span>' + label + '</span><span>' + str(v) + '%</span></div>'
+                card_html += '<div class="bar-bg"><div class="bar-fill ' + color_class + '" style="width:' + width + '%;"></div></div>'
                 card_html += '</div>'
-                card_html += '<p style="color:#666; font-size:11px; margin: 0;">PLANETA: <span style="color:#aaa;">' + home + '</span></p>'
-                card_html += '<div style="background: rgba(0,255,0,0.05); padding: 10px; border-radius: 8px; margin: 15px 0; border: 1px solid rgba(0,255,0,0.1);">'
-                card_html += '<span style="color:#00ff00; font-size:10px; font-weight:bold; display:block; margin-bottom:5px;">HABILIDADES:</span>'
-                card_html += '<span style="color:#ccc; font-size:12px; font-style:italic;">' + powers + '</span>'
-                card_html += '</div>'
-                
-                # Barras de Poder
-                stats = [
-                    ("PODER TOTAL", p_tot, "f-power"),
-                    ("COMBATE", p_com, "f-combat"),
-                    ("VELOCIDAD", p_spe, "f-speed"),
-                    ("INTELIGENCIA", p_int, "f-intel"),
-                    ("DURABILIDAD", p_dur, "f-durability")
-                ]
-                
-                for label, v, color_class in stats:
-                    width = str(min(v, 100))
-                    card_html += '<div class="stat-container">'
-                    card_html += '<div class="stat-label"><span>' + label + '</span><span>' + str(v) + '%</span></div>'
-                    card_html += '<div class="bar-bg"><div class="bar-fill ' + color_class + '" style="width:' + width + '%;"></div></div>'
-                    card_html += '</div>'
-                
-                card_html += '</div>'
+            
+            card_html += '</div>'
 
-                with cols[idx % 2]:
-                    st.markdown(card_html, unsafe_allow_html=True)
-        else:
-            st.error("SECUENCIA DE ADN NO ENCONTRADA")
-    except Exception as e:
-        st.error("FALLO EN EL SISTEMA: " + str(e))
+            with cols[idx % 2]:
+                st.markdown(card_html, unsafe_allow_html=True)
+    else:
+        st.error("SECUENCIA DE ADN NO ENCONTRADA")
 else:
-    st.info("SISTEMA EN ESPERA: Cargue el archivo CSV para activar el escaneo.")
+    st.error(f"ERROR CRÍTICO: No se encontró el archivo '{file_name}' en el repositorio.")
+    st.info("Asegúrate de que el CSV esté en la misma carpeta que este script en tu GitHub.")
