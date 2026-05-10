@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-import io
 
-# Configuración de la página
+# Configuración de la interfaz
 st.set_page_config(
     page_title="Omnitrix Database OS",
     page_icon="🧬",
@@ -10,10 +9,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- ESTILOS CSS (Inyectamos el diseño que te gusta) ---
+# --- SISTEMA DE ESTILOS (CSS) ---
+# He forzado el renderizado de las barras con sombras y degradados
 st.markdown("""
     <style>
-    /* Fondo y Base */
     .stApp {
         background-color: #0a0a0a;
         background-image: radial-gradient(circle at center, #051a05 0%, #0a0a0a 100%);
@@ -24,187 +23,157 @@ st.markdown("""
         font-family: 'Courier New', Courier, monospace;
         color: #00ff00;
         text-align: center;
-        text-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+        text-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
         font-size: 3.5rem;
         font-weight: 900;
-        margin-bottom: 5px;
+        margin-bottom: 0px;
     }
 
-    /* Estilo de la Tarjeta */
     .card {
-        background: rgba(34, 34, 34, 0.9);
-        border: 1px solid #333;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        transition: all 0.3s ease;
-    }
-    
-    .card:hover {
-        border-color: #00ff00;
-        box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        background: rgba(15, 15, 15, 0.9);
+        border: 2px solid #00ff00;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
     }
 
     .glow-text {
         color: #00ff00;
-        text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
         text-transform: uppercase;
-        font-weight: 900;
+        letter-spacing: 2px;
     }
 
-    /* Bloque de Poderes Visuales */
-    .power-box {
-        background: rgba(0, 0, 0, 0.5);
-        padding: 12px;
-        border-left: 3px solid #00ff00;
-        border-radius: 4px;
-        margin: 15px 0;
+    /* Contenedor de cada barra */
+    .stat-container {
+        margin-top: 15px;
+        margin-bottom: 10px;
     }
 
-    /* Barras de Progreso Custom */
-    .stat-row {
-        margin-top: 8px;
-    }
-    .stat-header {
+    .stat-label {
         display: flex;
         justify-content: space-between;
-        font-size: 10px;
+        font-size: 12px;
         font-weight: bold;
-        color: #888;
-        margin-bottom: 2px;
-    }
-    .bar-bg {
-        background: #222;
-        height: 6px;
-        border-radius: 10px;
-        width: 100%;
-        overflow: hidden;
-    }
-    .bar-fill {
-        height: 100%;
-        border-radius: 10px;
+        color: #00ff00;
+        margin-bottom: 4px;
+        text-transform: uppercase;
     }
 
-    /* Colores de Barras */
-    .bg-total { background: #ffcc00; box-shadow: 0 0 8px #ffcc00; }
-    .bg-combat { background: #00ff00; box-shadow: 0 0 8px #00ff00; }
-    .bg-speed { background: #00d4ff; box-shadow: 0 0 8px #00d4ff; }
-    .bg-intel { background: #a855f7; box-shadow: 0 0 8px #a855f7; }
-    .bg-durability { background: #ff4b4b; box-shadow: 0 0 8px #ff4b4b; }
-    .bg-stealth { background: #ffffff; box-shadow: 0 0 8px #ffffff; opacity: 0.7; }
-    .bg-element { background: #ff8c00; box-shadow: 0 0 8px #ff8c00; }
+    /* Fondo de la barra */
+    .bar-bg {
+        background: #111;
+        height: 14px;
+        border-radius: 7px;
+        width: 100%;
+        border: 1px solid #333;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Relleno de la barra con animación y brillo */
+    .bar-fill {
+        height: 100%;
+        border-radius: 7px;
+    }
+
+    /* Colores Neón */
+    .f-power { background: linear-gradient(90deg, #ffaa00, #ffff00); box-shadow: 0 0 10px #ffff00; }
+    .f-combat { background: linear-gradient(90deg, #008000, #00ff00); box-shadow: 0 0 10px #00ff00; }
+    .f-speed { background: linear-gradient(90deg, #0044ff, #00d4ff); box-shadow: 0 0 10px #00d4ff; }
+    .f-intel { background: linear-gradient(90deg, #6b21a8, #a855f7); box-shadow: 0 0 10px #a855f7; }
+    .f-durability { background: linear-gradient(90deg, #990000, #ff4b4b); box-shadow: 0 0 10px #ff4b4b; }
 
     /* Ocultar basura de Streamlit */
     #MainMenu, footer, header {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-# Título Principal
 st.markdown('<h1 class="main-title">OMNITRIX</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align:center; color:#006400; font-weight:bold; letter-spacing:3px;">PROTOCOLO DE ACCESO A DATOS</p>', unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; color:#00ff00; font-size:12px; letter-spacing:8px; opacity:0.8; margin-bottom:30px;">DATABASE ACCESS: GALVAN PRIME</p>', unsafe_allow_html=True)
 
-# --- CARGA DE ARCHIVO ---
-uploaded_file = st.file_uploader("📂 CARGAR BASE DE DATOS (CSV)", type=["csv"])
+# Subida de archivos
+uploaded_file = st.file_uploader("", type=["csv"])
 
 if uploaded_file is not None:
-    # Leer datos
-    df = pd.read_csv(uploaded_file)
-    df.columns = df.columns.str.strip().str.lower() # Limpiar nombres de columnas
+    try:
+        df = pd.read_csv(uploaded_file)
+        df.columns = df.columns.str.strip().str.lower()
 
-    # Buscador
-    search_query = st.text_input("🔍 ESCANEAR ADN:", placeholder="Escribe el nombre del alien...")
+        search = st.text_input("🧬 ESCANEAR ADN (Nombre del Alien):", placeholder="Ejemplo: Heatblast, XLR8...")
 
-    if search_query:
-        results = df[df['name'].str.contains(search_query, case=False, na=False)]
-    else:
-        results = df.head(6)
+        if search:
+            results = df[df['name'].str.contains(search, case=False, na=False)]
+        else:
+            results = df.head(4)
 
-    # Mostrar Resultados en columnas (2 por fila)
-    if not results.empty:
-        cols = st.columns(2)
-        for idx, (_, row) in enumerate(results.iterrows()):
-            with cols[idx % 2]:
-                # Datos Descriptivos
-                name = row.get('name', 'N/A').upper()
-                series = row.get('series', 'Original')
-                home = row.get('home_world', 'Desconocido')
-                powers_text = row.get('power', 'No identificado')
+        if not results.empty:
+            cols = st.columns(2)
+            for idx, (_, row) in enumerate(results.iterrows()):
                 
-                # Estadísticas Principales
-                tp = int(row.get('total_power', 0))
-                c = int(row.get('combat', 0))
-                s = int(row.get('speed', 0))
-                i = int(row.get('intelligence', 0))
-                
-                # Nuevas Estadísticas Visuales (Poderes convertidos a gráficas)
-                dur = int(row.get('durability', 0))
-                stl = int(row.get('stealth', 0))
-                # Calculamos un "Nivel Elemental" promedio basado en heat, water, electricity
-                ele = int((int(row.get('heat', 0)) + int(row.get('water', 0)) + int(row.get('electricity', 0))) / 3)
+                # Función para limpiar números
+                def val(c):
+                    try: return int(float(row.get(c, 0)))
+                    except: return 0
 
-                # Renderizar Tarjeta
-                st.markdown(f"""
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <h2 class="glow-text" style="margin:0; font-size: 1.5rem;">{name}</h2>
-                            <span style="background:#052e05; color:#00ff00; font-size:10px; padding:2px 8px; border-radius:4px; font-weight:bold;">{series}</span>
-                        </div>
-                        <div style="text-align:right;">
-                            <small style="color:#555; display:block; font-size:9px; font-weight:bold;">ORIGEN</small>
-                            <small style="color:#fff;">{home}</small>
-                        </div>
-                    </div>
+                name = str(row.get('name', 'N/A')).upper()
+                series = str(row.get('series', 'N/A'))
+                home = str(row.get('home_world', 'Desconocido'))
+                powers = str(row.get('power', 'No descritos'))
 
-                    <div class="power-box">
-                        <small style="color:#00ff00; font-weight:bold; font-size:10px; display:block; margin-bottom:8px; letter-spacing:1px;">ANÁLISIS DE HABILIDADES SECUNDARIAS</small>
+                # Variables de poder
+                p_tot = val('total_power')
+                p_com = val('combat')
+                p_spe = val('speed')
+                p_int = val('intelligence')
+                p_dur = val('durability')
+
+                with cols[idx % 2]:
+                    # Usamos una sola cadena HTML gigante para que Streamlit no "rompa" el código
+                    card_html = f"""
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2 class="glow-text">{name}</h2>
+                            <span style="background:#00ff00; color:black; font-size:10px; padding:2px 8px; border-radius:10px; font-weight:bold;">{series}</span>
+                        </div>
+                        <p style="color:#666; font-size:11px; margin: 0;">PLANETA: <span style="color:#aaa;">{home}</span></p>
                         
-                        <div class="stat-row">
-                            <div class="stat-header"><span>DURABILIDAD / RESISTENCIA</span><span>{dur}%</span></div>
-                            <div class="bar-bg"><div class="bar-fill bg-durability" style="width:{min(dur, 100)}%;"></div></div>
+                        <div style="background: rgba(0,255,0,0.05); padding: 10px; border-radius: 8px; margin: 15px 0; border: 1px solid rgba(0,255,0,0.1);">
+                            <span style="color:#00ff00; font-size:10px; font-weight:bold; display:block; margin-bottom:5px;">HABILIDADES:</span>
+                            <span style="color:#ccc; font-size:12px; font-style:italic;">{powers}</span>
                         </div>
 
-                        <div class="stat-row">
-                            <div class="stat-header"><span>SIGILO / CAMUFLAJE</span><span>{stl}%</span></div>
-                            <div class="bar-bg"><div class="bar-fill bg-stealth" style="width:{min(stl, 100)}%;"></div></div>
+                        <div class="stat-container">
+                            <div class="stat-label"><span>PODER TOTAL</span><span>{p_tot}%</span></div>
+                            <div class="bar-bg"><div class="bar-fill f-power" style="width:{min(p_tot, 100)}%;"></div></div>
                         </div>
 
-                        <div class="stat-row">
-                            <div class="stat-header"><span>POTENCIAL ELEMENTAL</span><span>{ele}%</span></div>
-                            <div class="bar-bg"><div class="bar-fill bg-element" style="width:{min(ele, 100)}%;"></div></div>
+                        <div class="stat-container">
+                            <div class="stat-label"><span>COMBATE</span><span>{p_com}%</span></div>
+                            <div class="bar-bg"><div class="bar-fill f-combat" style="width:{min(p_com, 100)}%;"></div></div>
+                        </div>
+
+                        <div class="stat-container">
+                            <div class="stat-label"><span>VELOCIDAD</span><span>{p_spe}%</span></div>
+                            <div class="bar-bg"><div class="bar-fill f-speed" style="width:{min(p_spe, 100)}%;"></div></div>
+                        </div>
+
+                        <div class="stat-container">
+                            <div class="stat-label"><span>INTELIGENCIA</span><span>{p_int}%</span></div>
+                            <div class="bar-bg"><div class="bar-fill f-intel" style="width:{min(p_int, 100)}%;"></div></div>
+                        </div>
+
+                        <div class="stat-container">
+                            <div class="stat-label"><span>DURABILIDAD</span><span>{p_dur}%</span></div>
+                            <div class="bar-bg"><div class="bar-fill f-durability" style="width:{min(p_dur, 100)}%;"></div></div>
                         </div>
                     </div>
-
-                    <div style="padding: 0 5px;">
-                        <div class="stat-row" style="margin-bottom:12px;">
-                            <div class="stat-header"><span style="color:#ffcc00;">NIVEL DE AMENAZA (TOTAL)</span><span style="color:#ffcc00;">{tp}</span></div>
-                            <div class="bar-bg" style="height:8px;"><div class="bar-fill bg-total" style="width:{min(tp, 100)}%;"></div></div>
-                        </div>
-
-                        <div class="stat-row">
-                            <div class="stat-header"><span>FUERZA FÍSICA</span><span>{c}</span></div>
-                            <div class="bar-bg"><div class="bar-fill bg-combat" style="width:{min(c, 100)}%;"></div></div>
-                        </div>
-                        
-                        <div class="stat-row">
-                            <div class="stat-header"><span>VELOCIDAD</span><span>{s}</span></div>
-                            <div class="bar-bg"><div class="bar-fill bg-speed" style="width:{min(s, 100)}%;"></div></div>
-                        </div>
-
-                        <div class="stat-row">
-                            <div class="stat-header"><span>INTELIGENCIA</span><span>{i}</span></div>
-                            <div class="bar-bg"><div class="bar-fill bg-intel" style="width:{min(i, 100)}%;"></div></div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top:15px; border-top:1px solid #222; padding-top:10px;">
-                        <p style="color:#666; font-size:10px; line-height:1; margin:0;"><b>NOTAS DE CAMPO:</b> {powers_text[:80]}...</p>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-    else:
-        st.error("⚠️ ADN NO ENCONTRADO EN LA BASE DE DATOS")
+                    """
+                    st.markdown(card_html, unsafe_allow_html=True)
+        else:
+            st.error("ADN NO IDENTIFICADO. Por favor, verifique el nombre.")
+    except Exception as e:
+        st.error(f"Error en el sistema central: {e}")
 else:
-    st.info("👋 BIENVENIDO, AZMUTH. Por favor, sube el archivo 'ben10_aliens_dataset.csv' para comenzar el escaneo.")
-
-st.markdown("<p style='text-align:center; color:#222; font-size: 10px; margin-top:50px;'>Omnitrix OS v6.0 | Galván Prime Tech</p>", unsafe_allow_html=True)
+    st.info("SISTEMA OMNITRIX OFFLINE. Cargue el archivo CSV para iniciar el escaneo.")
