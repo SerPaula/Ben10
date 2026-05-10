@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 # --- SISTEMA DE ESTILOS (CSS) ---
-# Usamos dobles llaves {{ }} para el CSS para que Python no las confunda con variables
+# Se inyecta el CSS global para la aplicación
 st.markdown("""
     <style>
     .stApp {
@@ -75,7 +75,6 @@ st.markdown("""
         border-radius: 7px;
     }
 
-    /* Clases de colores para las barras */
     .f-power { background: linear-gradient(90deg, #ffaa00, #ffff00); box-shadow: 0 0 10px #ffff00; }
     .f-combat { background: linear-gradient(90deg, #008000, #00ff00); box-shadow: 0 0 10px #00ff00; }
     .f-speed { background: linear-gradient(90deg, #0044ff, #00d4ff); box-shadow: 0 0 10px #00d4ff; }
@@ -89,7 +88,6 @@ st.markdown("""
 st.markdown('<h1 class="main-title">OMNITRIX</h1>', unsafe_allow_html=True)
 st.markdown('<p style="text-align:center; color:#00ff00; font-size:12px; letter-spacing:8px; opacity:0.8; margin-bottom:30px;">ACCESO A BASE DE DATOS: GALVAN PRIME</p>', unsafe_allow_html=True)
 
-# Subida del archivo CSV
 uploaded_file = st.file_uploader("", type=["csv"])
 
 if uploaded_file is not None:
@@ -108,7 +106,6 @@ if uploaded_file is not None:
             cols = st.columns(2)
             for idx, (_, row) in enumerate(results.iterrows()):
                 
-                # Función para limpiar valores numéricos
                 def val(c):
                     try: return int(float(row.get(c, 0)))
                     except: return 0
@@ -118,67 +115,47 @@ if uploaded_file is not None:
                 home = str(row.get('home_world', 'Desconocido'))
                 powers = str(row.get('power', 'Habilidades no registradas'))
 
-                # Obtención de estadísticas
                 p_tot = val('total_power')
                 p_com = val('combat')
                 p_spe = val('speed')
                 p_int = val('intelligence')
                 p_dur = val('durability')
 
-                # Renderizado manual para evitar conflictos con el formato de Streamlit
+                # Construcción manual del HTML para máxima compatibilidad
+                card_html = '<div class="card">'
+                card_html += '<div style="display: flex; justify-content: space-between; align-items: center;">'
+                card_html += '<h2 class="glow-text">' + name + '</h2>'
+                card_html += '<span style="background:#00ff00; color:black; font-size:10px; padding:2px 8px; border-radius:10px; font-weight:bold;">' + series + '</span>'
+                card_html += '</div>'
+                card_html += '<p style="color:#666; font-size:11px; margin: 0;">PLANETA: <span style="color:#aaa;">' + home + '</span></p>'
+                card_html += '<div style="background: rgba(0,255,0,0.05); padding: 10px; border-radius: 8px; margin: 15px 0; border: 1px solid rgba(0,255,0,0.1);">'
+                card_html += '<span style="color:#00ff00; font-size:10px; font-weight:bold; display:block; margin-bottom:5px;">HABILIDADES:</span>'
+                card_html += '<span style="color:#ccc; font-size:12px; font-style:italic;">' + powers + '</span>'
+                card_html += '</div>'
+                
+                # Barras de Poder
+                stats = [
+                    ("PODER TOTAL", p_tot, "f-power"),
+                    ("COMBATE", p_com, "f-combat"),
+                    ("VELOCIDAD", p_spe, "f-speed"),
+                    ("INTELIGENCIA", p_int, "f-intel"),
+                    ("DURABILIDAD", p_dur, "f-durability")
+                ]
+                
+                for label, v, color_class in stats:
+                    width = str(min(v, 100))
+                    card_html += '<div class="stat-container">'
+                    card_html += '<div class="stat-label"><span>' + label + '</span><span>' + str(v) + '%</span></div>'
+                    card_html += '<div class="bar-bg"><div class="bar-fill ' + color_class + '" style="width:' + width + '%;"></div></div>'
+                    card_html += '</div>'
+                
+                card_html += '</div>'
+
                 with cols[idx % 2]:
-                    st.markdown(f"""
-                    <div class="card">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h2 class="glow-text">{name}</h2>
-                            <span style="background:#00ff00; color:black; font-size:10px; padding:2px 8px; border-radius:10px; font-weight:bold;">{series}</span>
-                        </div>
-                        <p style="color:#666; font-size:11px; margin: 0;">PLANETA: <span style="color:#aaa;">{home}</span></p>
-                        
-                        <div style="background: rgba(0,255,0,0.05); padding: 10px; border-radius: 8px; margin: 15px 0; border: 1px solid rgba(0,255,0,0.1);">
-                            <span style="color:#00ff00; font-size:10px; font-weight:bold; display:block; margin-bottom:5px;">HABILIDADES:</span>
-                            <span style="color:#ccc; font-size:12px; font-style:italic;">{powers}</span>
-                        </div>
-
-                        <div class="stat-container">
-                            <div class="stat-label"><span>PODER TOTAL</span><span>{p_tot}%</span></div>
-                            <div class="bar-bg">
-                                <div class="bar-fill f-power" style="width:{min(p_tot, 100)}%;"></div>
-                            </div>
-                        </div>
-
-                        <div class="stat-container">
-                            <div class="stat-label"><span>COMBATE</span><span>{p_com}%</span></div>
-                            <div class="bar-bg">
-                                <div class="bar-fill f-combat" style="width:{min(p_com, 100)}%;"></div>
-                            </div>
-                        </div>
-
-                        <div class="stat-container">
-                            <div class="stat-label"><span>VELOCIDAD</span><span>{p_spe}%</span></div>
-                            <div class="bar-bg">
-                                <div class="bar-fill f-speed" style="width:{min(p_spe, 100)}%;"></div>
-                            </div>
-                        </div>
-
-                        <div class="stat-container">
-                            <div class="stat-label"><span>INTELIGENCIA</span><span>{p_int}%</span></div>
-                            <div class="bar-bg">
-                                <div class="bar-fill f-intel" style="width:{min(p_int, 100)}%;"></div>
-                            </div>
-                        </div>
-
-                        <div class="stat-container">
-                            <div class="stat-label"><span>DURABILIDAD</span><span>{p_dur}%</span></div>
-                            <div class="bar-bg">
-                                <div class="bar-fill f-durability" style="width:{min(p_dur, 100)}%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(card_html, unsafe_allow_html=True)
         else:
             st.error("SECUENCIA DE ADN NO ENCONTRADA")
     except Exception as e:
-        st.error(f"FALLO EN EL SISTEMA: {e}")
+        st.error("FALLO EN EL SISTEMA: " + str(e))
 else:
-    st.info("SISTEMA EN ESPERA: Cargue el archivo ben10_aliens_dataset.csv para activar el escaneo.")
+    st.info("SISTEMA EN ESPERA: Cargue el archivo CSV para activar el escaneo.")
